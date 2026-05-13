@@ -208,7 +208,7 @@
 	origin_tech = list(TECH_COMBAT = 2, TECH_MATERIAL = 2, TECH_ILLEGAL = 4)
 	max_shells = 5
 	recoil = 2 // ow my fucking hand
-	accuracy = -15 // smooth bore + short barrel = shit accuracy
+	accuracy = -15
 	ammo_type = /obj/item/ammo_casing/a12g
 	projectile_type = /obj/item/projectile/bullet/shotgun
 	// ToDo: Remove accuracy debuf in exchange for slightly injuring your hand every time you fire it.
@@ -349,3 +349,282 @@
 
 /obj/item/weapon/gun/projectile/revolver/consul/update_icon()
 	update_charge()
+
+//RS Add RSH12 Sari Bork
+/obj/item/weapon/gun/projectile/revolver/rsh
+	name = "RSH-12 Requiem"
+	desc = "RSH-12 'Requiem', for when you need to put an even bigger hole through something big, an absolute cannon of a handgun,  Uses Custom made 12.7x55 rounds."
+	icon = 'code/game/Rogue Star/icons/itemicons/rsh.dmi'
+	icon_state = "rsh"
+	item_state = "rsh"
+	caliber = "12.7x55"
+	origin_tech = list(TECH_COMBAT = 2, TECH_MATERIAL = 2)
+	handle_casings = CYCLE_CASINGS
+	load_method = SINGLE_CASING|SPEEDLOADER
+	max_shells = 5
+	recoil = 3 // ow my fucking hand
+	ammo_type = /obj/item/ammo_casing/a127x54r
+	projectile_type = /obj/item/projectile/bullet/pistol/stronger/hp
+	chamber_offset = 0 //how many empty chambers in the cylinder until you hit a round
+	fire_sound = 'sound/weapons/Gunshot_deagle.ogg'
+	var/recentpump = 0 			//To prevent spammage
+	var/busy = FALSE //Reload spam fix
+	var/cocked = FALSE
+	var/action_sound = 'sound/weapons/revolvercock.ogg'
+	var/opened = FALSE
+	var/empty_sprite = 0 		//This is just a dirty var so it doesn't fudge up.
+	var/pump_animation = "rsh-cock"	//You put the reference to the animation in question here. Frees up namming. Ex: "shotgun_old_pump" or "sniper_cycle"
+	reload_time = 10
+	can_flashlight = TRUE
+	gun_light = FALSE
+	var/doubleaction = FALSE
+
+/obj/item/weapon/gun/projectile/revolver/rsh/CtrlClick(mob/user)
+	..()
+	if(can_flashlight && ishuman(user) && src.loc == usr && !user.incapacitated(INCAPACITATION_ALL))
+		if(gun_light)
+			add_overlay("light")
+		else
+			cut_overlays()
+
+
+/obj/item/weapon/gun/projectile/revolver/rsh/attack_self(mob/living/user as mob)
+	if(loc == user)
+		if(opened)
+			rsh_close(user)
+		else
+			rsh_open(user)
+			dump_ammo(user)
+	else
+		..()
+
+/obj/item/weapon/gun/projectile/revolver/rsh/consume_next_projectile()
+	if(chambered && !opened)
+		return chambered.BB
+	return null
+
+/obj/item/weapon/gun/projectile/revolver/rsh/Fire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0)
+	if(opened)
+		return
+	if((!doubleaction) && (!cocked) && (world.time > next_fire_time) && (world.time > recentpump + 10))
+		recentpump = world.time
+		to_chat(user, "<span class='notice'>cocked = [cocked] pumptime?</span>")
+		pump(user)
+		return
+	if(doubleaction && (world.time > next_fire_time))
+		chambered = null
+		if(loaded.len)
+			var/obj/item/ammo_casing/AC = loaded[1] // Load next casing.
+			loaded -= AC // Remove casing from loaded list.
+			chambered = AC
+			//M.hud_used.update_ammo_hud(M, src) // TGMC Ammo HUD Port
+			cocked = TRUE
+		if(pump_animation) // This affects all bolt action and shotguns.
+			//playsound(src, action_sound, 60, 1)
+			flick("[pump_animation]", src) // This plays any pumping
+	if(cocked && (world.time > recentpump + 5))
+		..()
+		cocked = FALSE
+
+
+
+/obj/item/weapon/gun/projectile/revolver/rsh/proc/rsh_open(mob/m as mob)
+	opened = TRUE
+	to_chat(m, "<span class='notice'>You swing open the cylinder on the [src]</span>")
+	playsound(src, 'sound/weapons/flipblade.ogg', 25, 1)
+	icon_state = "rsh-open"
+	item_state = "rsh-open"
+	update_icon()
+	//return
+
+/obj/item/weapon/gun/projectile/revolver/rsh/proc/rsh_close(mob/m as mob)
+	opened = FALSE
+	to_chat(m, "<span class='notice'>You swing shut the cylinder on the [src]</span>")
+	icon_state = "rsh"
+	item_state = "rsh"
+	update_icon()
+	//return
+
+/obj/item/weapon/gun/projectile/revolver/rsh/proc/dump_ammo(mob/user as mob)
+	var/count = 0
+	var/turf/T = get_turf(user)
+	if(!busy)
+		if(T)
+			cocked = FALSE
+			to_chat(user, "<span class='notice'>chambered test 1 [chambered]</span>")
+			if(chambered && !chambered.BB)
+				to_chat(user, "<span class='notice'>chambered test 2 [chambered]</span>")
+				busy = TRUE
+				if(do_after(user, reload_time, ignore_movement = TRUE))
+					chambered.loc = get_turf(src) // Eject casing
+					chambered = null
+					count++
+			for(var/obj/item/ammo_casing/C in loaded)
+				if(!C.BB)
+					busy = TRUE
+					if(do_after(user, reload_time, ignore_movement = TRUE))
+						T = get_turf(user)
+						if(loc != user)
+							busy = FALSE
+							break
+						C.loc = T
+						count++
+						loaded-= C
+						playsound(src, "casing_sound", 50, 1)
+
+		if(count)
+			busy = FALSE
+			user.visible_message("[user] unloads [src].", "<span class='notice'>You unload [count] round\s from [src].</span>")
+			user.hud_used.update_ammo_hud(user, src) // TGMC Ammo HUD Port
+			//playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		else
+			busy = FALSE
+			return
+/obj/item/weapon/gun/projectile/revolver/rsh/proc/pump(mob/M as mob)
+	if(opened)
+		rsh_close()
+		//return
+	// We have a shell in the chamber & revolver not cocked
+	to_chat(M, "<span class='notice'>cocked = [cocked] chambered = [chambered]</span>")
+	if((!cocked))
+		// Load next shell
+		cocked = TRUE
+		chambered = null
+		if(loaded.len)
+			var/obj/item/ammo_casing/AC = loaded[1] // Load next casing.
+			loaded -= AC // Remove casing from loaded list.
+			chambered = AC
+			M.hud_used.update_ammo_hud(M, src) // TGMC Ammo HUD Port
+
+		if(pump_animation) // This affects all bolt action and shotguns.
+			playsound(src, action_sound, 60, 1)
+			flick("[pump_animation]", src) // This plays any pumping
+
+	update_icon()
+
+
+//Below added due to unique reloading type, weh.
+
+/obj/item/weapon/gun/projectile/revolver/rsh/load_ammo(var/obj/item/A, mob/user)
+	if(istype(A, /obj/item/ammo_magazine) && !busy)
+		var/obj/item/ammo_magazine/AM = A
+		if(!(load_method & AM.mag_type) || caliber != AM.caliber || allowed_magazines && !is_type_in_list(A, allowed_magazines))
+			to_chat(user, "<span class='warning'>[AM] won't load into [src]!</span>")
+			return
+		//if(loaded.len >= max_shells)
+		dump_ammo(user)
+			//if(opened)
+			//	rsh_close()
+			//to_chat(user, "<span class='warning'>[src] is full!</span>")
+			//return
+		var/count = 0
+		for(var/obj/item/ammo_casing/C in AM.stored_ammo)
+			if(loaded.len >= max_shells)
+				break
+			if(C.caliber == caliber)
+				busy = TRUE
+				if(do_after(user, reload_time, ignore_movement = TRUE))
+					if(AM.loc != src.loc)
+						busy = FALSE
+						break
+					C.loc = src
+					loaded += C
+					AM.stored_ammo -= C //should probably go inside an ammo_magazine proc, but I guess less proc calls this way...
+					count++
+					user.hud_used.update_ammo_hud(user, src)
+					//user.visible_message("[user] inserts \a [C] into [src].", "<span class='notice'>You insert \a [C] into [src].</span>")
+					user.hud_used.update_ammo_hud(user, src)
+					flick("rsh-open-spin",src)
+					playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		user.visible_message("[user] reloads [src].", "<span class='notice'>You load [count] round\s into [src].</span>")
+		busy = FALSE
+		if(opened)
+			rsh_close()
+		AM.update_icon()
+	else if(istype(A, /obj/item/ammo_casing))
+		var/obj/item/ammo_casing/C = A
+		if(!(load_method & SINGLE_CASING) || caliber != C.caliber)
+			return //incompatible
+		if(loaded.len >= max_shells)
+			to_chat(user, "<span class='warning'>[src] is full.</span>")
+			return
+		if(!busy)
+			if(do_after(user, reload_time * C.w_class))
+				user.remove_from_mob(C)
+				C.loc = src
+				loaded.Insert(1, C) //add to the head of the list
+				user.visible_message("[user] inserts \a [C] into [src].", "<span class='notice'>You insert \a [C] into [src].</span>")
+				flick("rsh-open-spin",src)
+				playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+				busy = FALSE
+
+	else if(istype(A, /obj/item/weapon/storage))
+		var/obj/item/weapon/storage/storage = A
+		if(!(load_method & SINGLE_CASING))
+			return //incompatible
+
+		to_chat(user, "<span class='notice'>You start loading \the [src].</span>")
+		sleep(1 SECOND)
+		for(var/obj/item/ammo_casing/ammo in storage.contents)
+			if(caliber != ammo.caliber)
+				continue
+
+			load_ammo(ammo, user)
+
+			if(loaded.len >= max_shells)
+				to_chat(user, "<span class='warning'>[src] is full.</span>")
+				break
+			sleep(2 SECOND)
+
+	update_icon()
+	user.hud_used.update_ammo_hud(user, src)
+
+//attempts to unload src. If allow_dump is set to 0, the speedloader unloading method will be disabled
+/obj/item/weapon/gun/projectile/revolver/rsh/unload_ammo(mob/user, var/allow_dump=1)
+	if(loaded.len)
+		if(load_method & SINGLE_CASING)
+			var/obj/item/ammo_casing/C = loaded[loaded.len]
+			loaded.len--
+			user.put_in_hands(C)
+			user.visible_message("[user] removes \a [C] from [src].", "<span class='notice'>You remove \a [C] from [src].</span>")
+		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		user.hud_used.update_ammo_hud(user, src)
+	else
+		if(chambered)
+			chambered.loc = get_turf(src) // Eject casing
+			chambered = null
+			cocked = FALSE
+			playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		else
+			to_chat(user, "<span class='warning'>[src] is empty.</span>")
+	update_icon()
+	user.hud_used.update_ammo_hud(user, src)
+
+/obj/item/weapon/gun/projectile/revolver/rsh/attackby(var/obj/item/A as obj, mob/user as mob)
+	if(loc == user)
+		if(opened)
+			load_ammo(A, user)
+		else
+			//to_chat(user, "<span class='warning'>You must open the revolver to load [A].</span>")
+			rsh_open(user)
+			load_ammo(A, user)
+
+	else
+		..()
+
+/obj/item/weapon/gun/projectile/revolver/rsh/attack_hand(mob/user as mob)
+
+	if(loc == user)
+		if(opened)
+			if(user.get_inactive_hand() == src)
+				unload_ammo(user, allow_dump=0)
+			else
+				..()
+		else
+			rsh_open(user)
+	else
+		..()
+
+
+
+//RS Add END Rsh-12

@@ -105,6 +105,44 @@
 	damage = 60
 	hud_state = "pistol_heavy"
 
+
+//RS Add Start, 5/7/2026, Sari Bork RSH The biggest Iron
+/obj/item/projectile/bullet/pistol/stronger
+	damage = 25
+	hud_state = "pistol_heavy"
+
+
+/obj/item/projectile/bullet/pistol/stronger/hp
+	damage = 50
+	armor_penetration = -25
+	hud_state = "pistol_heavy"
+
+/obj/item/projectile/bullet/pistol/stronger/hp/on_hit(var/atom/target, var/blocked = 0)
+	..()
+	if(istype(target, /mob/living/simple_mob/animal))
+		var/mob/living/simple_mob/animal/t = target
+		t.apply_damage(65, BRUTE)
+	return 1
+/obj/item/projectile/bullet/pistol/stronger/ap
+	damage = 40
+	armor_penetration = 40
+	hud_state = "pistol_ap"
+
+/obj/item/projectile/bullet/pistol/stronger/ion
+	name = "ion slug"
+	damage = 15
+	embed_chance = 0
+	sharp = FALSE
+	check_armour = "melee"
+	hud_state = "pistol_special"
+
+	combustion = FALSE
+
+/obj/item/projectile/bullet/pistol/stronger/ion/on_hit(var/atom/target, var/blocked = 0)
+	..()
+	empulse(target, 0, 0, 0, 0)	//Only affects what it hits
+	return 1
+//RS Add End, 5/7/2026, Sari Bork RSH The biggest Iron
 /obj/item/projectile/bullet/pistol/rubber/strong // "Rubber" bullets for high power pistols.
 	fire_sound = 'sound/weapons/gunshot3.ogg' // Rubber shots have less powder, but these still have more punch than normal rubber shot.
 	damage = 10

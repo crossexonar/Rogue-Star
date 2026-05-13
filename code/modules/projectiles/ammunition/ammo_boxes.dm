@@ -553,3 +553,53 @@
 	matter = list(MAT_STEEL = 18000)
 	max_ammo = 100
 	multiple_sprites = 1
+
+//RS Add Start, 5/7/2026, Sari Bork RSH The biggest Iron
+/*
+*12.7x55
+*/
+
+/obj/item/ammo_magazine/ammo_box/b127x54r
+	name = "ammo box (12.7x55)"
+	desc = "A box of 12.7x55 rounds"
+	icon = 'code/game/Rogue Star/icons/itemicons/rsh.dmi'
+	icon_state = "rsh_hp"
+	caliber = "12.7x55"
+	ammo_type = /obj/item/ammo_casing/a127x54r
+	matter = list(MAT_STEEL = 5040)
+	max_ammo = 15
+	multiple_sprites = 1
+
+/obj/item/ammo_magazine/ammo_box/b127x54r/ap
+	name = "ammo box (12.7x55 ap)"
+	desc = "A box of 12.7x55 armor piercing rounds"
+	icon_state = "rsh_ap"
+	caliber = "12.7x55"
+	ammo_type = /obj/item/ammo_casing/a127x54r/ap
+	matter = list(MAT_STEEL = 5040)
+	max_ammo = 5
+	multiple_sprites = 1
+
+/obj/item/ammo_magazine/ammo_box/b127x54r/stun
+	name = "ammo box (12.7x55 stun)"
+	desc = "A box of 12.7x55 stun rounds"
+	icon = 'code/game/Rogue Star/icons/itemicons/rsh.dmi'
+	icon_state = "rsh_taser"
+	caliber = "12.7x55"
+	ammo_type = /obj/item/ammo_casing/a127x54r/stun
+	matter = list(MAT_STEEL = 5040)
+	max_ammo = 10
+	multiple_sprites = 1
+
+/obj/item/ammo_magazine/ammo_box/b127x54r/ion
+	name = "ammo box (12.7x55 ion)"
+	desc = "A box of 12.7x55 ion rounds"
+	icon_state = "rsh_ion"
+	caliber = "12.7x55"
+	ammo_type = /obj/item/ammo_casing/a127x54r/ion
+	matter = list(MAT_STEEL = 5040)
+	max_ammo = 5
+	multiple_sprites = 1
+
+
+//RS Add End

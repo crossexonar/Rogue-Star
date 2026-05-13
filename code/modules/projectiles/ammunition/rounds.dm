@@ -491,3 +491,42 @@
 	icon_state = "s-casing-spent"
 	BB = null
 	projectile_type = null
+
+
+
+/*
+ * 12.7x55 RS Add 5/7/2026, Sari Bork
+ */
+
+/obj/item/ammo_casing/a127x54r
+	desc = "A 12.7x55 Hollow Point bullet casing."
+	caliber = "12.7x55"
+	projectile_type = /obj/item/projectile/bullet/pistol/stronger/hp
+	matter = list(MAT_STEEL = 60)
+	icon = 'code/game/Rogue Star/icons/itemicons/rsh.dmi'
+	icon_state = "rsh_hp_casing"
+
+/obj/item/ammo_casing/a127x54r/ap
+	desc = "A 12.7x55 armor piercing bullet casing."
+	caliber = "12.7x55"
+	icon_state = "rsh_ap_casing"
+	projectile_type = /obj/item/projectile/bullet/pistol/stronger/ap
+	matter = list(MAT_STEEL = 60)
+
+/obj/item/ammo_casing/a127x54r/ion
+	desc = "A 12.7x55 ion bullet casing."
+	caliber = "12.7x55"
+	icon_state = "rsh_ion_casing"
+	projectile_type = /obj/item/projectile/bullet/pistol/stronger/ion
+	matter = list(MAT_STEEL = 60)
+
+/obj/item/ammo_casing/a127x54r/stun
+	desc = "A 12.7x55 stun bullet casing."
+	caliber = "12.7x55"
+	icon_state = "rsh_taser_casing"
+	projectile_type = /obj/item/projectile/energy/electrode/stunshot/strong
+
+
+/obj/item/ammo_casing/a127x54r/spent/Initialize()
+	..()
+	expend()
