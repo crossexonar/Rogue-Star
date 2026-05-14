@@ -549,14 +549,15 @@
 			to_chat(user, "<span class='warning'>[src] is full.</span>")
 			return
 		if(!busy)
-			if(do_after(user, reload_time * C.w_class))
+			busy = TRUE
+			if(do_after(user, reload_time, ignore_movement = TRUE))
 				user.remove_from_mob(C)
 				C.loc = src
 				loaded.Insert(1, C) //add to the head of the list
 				user.visible_message("[user] inserts \a [C] into [src].", "<span class='notice'>You insert \a [C] into [src].</span>")
 				flick("rsh-open-spin",src)
 				playsound(src, 'sound/weapons/empty.ogg', 50, 1)
-				busy = FALSE
+			busy = FALSE
 
 	else if(istype(A, /obj/item/weapon/storage))
 		var/obj/item/weapon/storage/storage = A
@@ -583,18 +584,24 @@
 /obj/item/weapon/gun/projectile/revolver/rsh/unload_ammo(mob/user, var/allow_dump=1)
 	if(loaded.len)
 		if(load_method & SINGLE_CASING)
-			var/obj/item/ammo_casing/C = loaded[loaded.len]
-			loaded.len--
-			user.put_in_hands(C)
-			user.visible_message("[user] removes \a [C] from [src].", "<span class='notice'>You remove \a [C] from [src].</span>")
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
-		user.hud_used.update_ammo_hud(user, src)
+			busy = TRUE
+			if(do_after(user, reload_time, ignore_movement = TRUE))
+				var/obj/item/ammo_casing/C = loaded[loaded.len]
+				loaded.len--
+				user.put_in_hands(C)
+				user.visible_message("[user] removes \a [C] from [src].", "<span class='notice'>You remove \a [C] from [src].</span>")
+				playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+				user.hud_used.update_ammo_hud(user, src)
+			busy = FALSE
 	else
 		if(chambered)
-			chambered.loc = get_turf(src) // Eject casing
-			chambered = null
-			cocked = FALSE
-			playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+			busy = TRUE
+			if(do_after(user, reload_time, ignore_movement = TRUE))
+				chambered.loc = get_turf(src) // Eject casing
+				chambered = null
+				cocked = FALSE
+				playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+			busy = FALSE
 		else
 			to_chat(user, "<span class='warning'>[src] is empty.</span>")
 	update_icon()
