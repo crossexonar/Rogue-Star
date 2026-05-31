@@ -121,7 +121,7 @@
 	..()
 	if(istype(target, /mob/living/simple_mob/animal))
 		var/mob/living/simple_mob/animal/t = target
-		t.apply_damage(65, BRUTE)
+		t.apply_damage(30, BRUTE)
 	return 1
 /obj/item/projectile/bullet/pistol/stronger/ap
 	damage = 40
