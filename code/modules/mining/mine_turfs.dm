@@ -309,6 +309,23 @@ var/list/mining_overlay_cache = list()
 		excavation_level += Proj.excavation_amount
 		update_archeo_overlays(Proj.excavation_amount)
 
+/turf/simulated/mineral/proc/cmlaser_act(var/excavation_amount) //RS ADD, Beam mining laser wao
+	if(excavation_amount)
+		var/newDepth = excavation_level + excavation_amount // Used commonly below
+		if(newDepth >= 200) // first, if the turf is completely drilled then don't bother checking for finds and just drill it
+			GetDrilled(0)
+
+		//destroy any archaeological finds
+		if(finds && finds.len)
+			var/datum/find/F = finds[1]
+			if(newDepth > F.excavation_required) // Digging too deep with something as clumsy or random as a blaster will destroy artefacts
+				finds.Remove(finds[1])
+				if(prob(50))
+					artifact_debris()
+
+		excavation_level += excavation_amount
+		update_archeo_overlays(excavation_amount)
+
 /turf/simulated/mineral/Bumped(AM)
 
 	. = ..()
