@@ -2,10 +2,10 @@
 /obj/item/device/continuous_cmlaser
 	name = "BSM-92 bluespace cmlaser backpack"
 	desc = "Contains a bluespace cmlaser, this portable unit digitizes and stores chems and battery power used by the attached gun."
-	icon = 'code/game/Rogue Star/icons/itemicons/borkmedigun.dmi'
-	icon_override = 'code/game/Rogue Star/icons/itemicons/borkmedigun.dmi'
-	icon_state = "mg-backpack"
-	item_state = "mg-backpack-onmob"
+	icon = 'code/game/Rogue Star/icons/itemicons/MiningLaser.dmi'
+	icon_override = 'code/game/Rogue Star/icons/itemicons/MiningLaser.dmi'
+	icon_state = "mlaser-backpack"
+	item_state = "mlaser-backpack-onmob"
 	slot_flags = SLOT_BACK
 	force = 5
 	throwforce = 6
@@ -42,7 +42,7 @@
 	var/chargecap = 1000
 	var/compact = 0
 	var/busy = FALSE
-	var/kenzie = FALSE
+	//var/kenzie = FALSE
 	var/preloaded = FALSE
 
 //Preloaded for map spawn
@@ -77,35 +77,8 @@
 /obj/item/device/continuous_cmlaser_modkit
 	name = "Continuous Medigun upgrade kit"
 	desc = "A kit containing all the needed tools and parts to upgrade the BLEM."
-	icon = 'code/game/Rogue Star/icons/itemicons/borkmedigun.dmi'
-	icon_state = "mg-modkit"
-
-/obj/item/weapon/storage/continuous_cmlaser_box
-	name = "Continuous Medigun Package"
-	desc = "A Box containing a BSM-92 Medigun"
-	icon = 'code/game/Rogue Star/icons/itemicons/borkmedigun.dmi'
-	icon_state = "medibox"
-	var/apply_sounds
-	drop_sound = 'sound/items/drop/cardboardbox.ogg'
-	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
-	starts_with = list(/obj/item/weapon/paper/continuous_cmlaser_manual,
-	/obj/item/device/continuous_cmlaser/preloaded
-	)
-
-/obj/item/weapon/storage/continuous_cmlaser_box/attack_self(mob/user)
-	. = ..()
-	if(do_after(user, 10))
-		user.temporarilyRemoveItemFromInventory(src, TRUE)
-		for(var/obj/stuff as anything in contents)
-			if(isitem(stuff))
-				user.put_in_hands(stuff)
-			else
-				stuff.forceMove(drop_location())
-		playsound(loc, 'sound/items/poster_ripped.ogg', 100, TRUE)
-		qdel(src)
-
-/obj/item/weapon/storage/continuous_cmlaser_box/AltClick(mob/user)
-	return
+	icon = 'code/game/Rogue Star/icons/itemicons/MiningLaser.dmi'
+	icon_state = "mlaser-upgrade"
 
 /obj/item/device/continuous_cmlaser/proc/is_twohanded()
 	return !compact
@@ -205,55 +178,38 @@
 	. = ..()
 	cut_overlays()
 	if((bcell.percent() <= 5 ))
-		add_overlay(image('code/game/Rogue Star/icons/itemicons/borkmedigun.dmi', "no_battery"))
+		add_overlay(image('code/game/Rogue Star/icons/itemicons/MiningLaser.dmi', "no_battery"))
 	else if((bcell.percent() <= 25 && bcell.percent() > 5))
-		add_overlay(image('code/game/Rogue Star/icons/itemicons/borkmedigun.dmi', "low_battery"))
+		add_overlay(image('code/game/Rogue Star/icons/itemicons/MiningLaser.dmi', "low_battery"))
 
 	if(brutevol <= 0 && brutecharge > 0)
-		add_overlay(image('code/game/Rogue Star/icons/itemicons/borkmedigun.dmi', "red"))
+		add_overlay(image('code/game/Rogue Star/icons/itemicons/MiningLaser.dmi', "red"))
 	else if(brutecharge <= 0 && brutevol <= 0)
-		add_overlay(image('code/game/Rogue Star/icons/itemicons/borkmedigun.dmi', "redstrike-blink"))
+		add_overlay(image('code/game/Rogue Star/icons/itemicons/MiningLaser.dmi', "redstrike-blink"))
 
 	if(toxvol <= 0 && toxcharge > 0)
-		add_overlay(image('code/game/Rogue Star/icons/itemicons/borkmedigun.dmi', "green"))
+		add_overlay(image('code/game/Rogue Star/icons/itemicons/MiningLaser.dmi', "green"))
 	else if(toxcharge <= 0 && toxvol <= 0)
-		add_overlay(image('code/game/Rogue Star/icons/itemicons/borkmedigun.dmi', "greenstrike-blink"))
+		add_overlay(image('code/game/Rogue Star/icons/itemicons/MiningLaser.dmi', "greenstrike-blink"))
 
 	if(burnvol <= 0 && burncharge > 0)
-		add_overlay(image('code/game/Rogue Star/icons/itemicons/borkmedigun.dmi', "orange"))
+		add_overlay(image('code/game/Rogue Star/icons/itemicons/MiningLaser.dmi', "orange"))
 	else if(burncharge <= 0 && burnvol <= 0)
-		add_overlay(image('code/game/Rogue Star/icons/itemicons/borkmedigun.dmi', "orangestrike-blink"))
+		add_overlay(image('code/game/Rogue Star/icons/itemicons/MiningLaser.dmi', "orangestrike-blink"))
 
 /obj/item/device/continuous_cmlaser/proc/replace_icon(inhand)
-	var/sprite = "-backpack"
-	if(compact)
-		sprite = "-belt"
-	var/special = null
-	if(kenzie)
-		special = "-kenzie"
 	if(inhand)
-		icon_state = "mg[sprite]-deployed[special]"
-		item_state = "mg[sprite]-deployed-onmob[special]"
-		if(is_twohanded())
-			cmlaser.icon_state = "medblaster[special]"
-			cmlaser.base_icon_state = "medblaster[special]"
-			cmlaser.wielded_item_state = "medblaster[special]-wielded"
-			cmlaser.update_icon()
-		else
-			cmlaser.icon_state = "medblaster-compact[special]"
-			cmlaser.base_icon_state = "medblaster-compact[special]"
-			cmlaser.wielded_item_state = ""
-			cmlaser.update_icon()
-	else if(is_twohanded())
-		icon_state = "mg[sprite][special]"
-		item_state = "mg[sprite]-onmob[special]"
-		cmlaser.icon_state = "medblaster[special]"
-		cmlaser.base_icon_state = "medblaster[special]"
+		icon_state = "mlaser-backpack"
+		item_state = "mlaser-backpack-onmob"
+
+		cmlaser.icon_state = "mlaser"
+		cmlaser.base_icon_state = "mlaser"
+		cmlaser.update_icon()
 	else
-		icon_state = "mg[sprite][special]"
-		item_state = "mg[sprite]-onmob[special]"
-		cmlaser.icon_state = "medblaster-compact[special]"
-		cmlaser.base_icon_state = "medblaster-compact[special]"
+		icon_state = "mlaser-backpack"
+		item_state = "mlaser-backpack-onmob-holstered"
+		cmlaser.icon_state = "mlaser"
+		cmlaser.base_icon_state = "mlaser"
 
 	update_icon()
 
@@ -282,7 +238,7 @@
 		else
 			bcell.charge = chargecap
 			bcell.maxcharge = chargecap
-			cmlaser.beam_range = 3+smodule.get_rating()
+			//cmlaser.beam_range = 3+smodule.get_rating()
 	update_icon()
 
 
@@ -296,6 +252,7 @@
 	QDEL_NULL(slaser)
 	. = ..()
 
+/*
 /obj/item/device/continuous_cmlaser/equipped(var/mob/user, var/slot)
 
 	if(slot == slot_back || slot == slot_belt || slot == slot_s_store)
@@ -306,7 +263,7 @@
 			kenzie = FALSE
 		replace_icon()
 	..()
-
+*/
 
 
 /obj/item/device/continuous_cmlaser/emp_act(severity)
@@ -657,7 +614,7 @@
 
 /obj/item/device/continuous_cmlaser/dropped(mob/user)
 	..()
-	kenzie = FALSE
+	//kenzie = FALSE
 	replace_icon()
 	reattach_cmlaser(user) //cmlaser attached to a base unit should never exist outside of their base unit or the mob equipping the base unit
 

@@ -1,24 +1,32 @@
+/datum/looping_sound/mininglaser
+	start_sound = 'sound/rogue-star/MiningLaser/laserstart.ogg'
+	start_length = 10
+	mid_sounds = list('sound/rogue-star/MiningLaser/laserloop.ogg' = 1)
+	mid_length = 9.5
+	end_sound = 'sound/rogue-star/MiningLaser/laserstop.ogg'
+	volume = 15
+
 /obj/item/device/new_cmlaser/linked
 	var/obj/item/device/continuous_cmlaser/cmlaser_base_unit
-	var/myicon = "medbeam_basic"
-	var/mycolor = "#037ffc"
+	var/filter = filter(type = "outline", size = 1, color = "#00FF00")
+	var/list/highlighted  = list()
 	var/datum/beam/scan_beam
-	var/list/box_segments
 	var/lastdir
 	var/excavation_amount = 200
 	var/warmup = 25
 	var/turf/lastmined
 	var/storedname
+	var/datum/looping_sound/mininglaser/soundloop
+	var/bumpmine
 
 /obj/item/device/new_cmlaser/linked/Initialize(mapload, var/obj/item/device/continuous_cmlaser/backpack)
 	. = ..()
 	cmlaser_base_unit = backpack
 	RegisterSignal(src,COMSIG_MOVABLE_MOVED, PROC_REF(on_moved))
-	if(!cmlaser_base_unit.is_twohanded())
-		icon_state = "medblaster-compact"
-		base_icon_state = "medblaster-compact"
-		wielded_item_state = ""
-		update_icon()
+	icon_state = "mlaser"
+	base_icon_state = "mlaser"
+	update_icon()
+	soundloop = new(list(src), FALSE)
 
 /obj/item/device/new_cmlaser/linked/Destroy()
 	UnregisterSignal(src,COMSIG_MOVABLE_MOVED)
@@ -65,57 +73,35 @@
 
 
 /obj/item/device/new_cmlaser/linked/proc/process_mining(var/turf/iteration)
-	var/mob/player = loc
-	to_chat(player, span_notice("lastname = [lastmined.name]"))
-	for(var/atom/X as anything in orange(beam_range-2, lastmined))
+	var/mob/user = loc
+	for(var/atom/X as anything in orange(1, lastmined))
 		if(!X.simulated)
 			continue
 		if(isturf(X))
+			if(!(X in range(beam_range, user)) || (!(X in view(beam_range, user))))
+				continue
 			var/turf/simulated/mineral/target_turf = X
-			to_chat(player, span_notice("X is [target_turf.name]"))
+			//to_chat(user, span_notice("X is [target_turf.name]"))
 			if(target_turf.density && istype(target_turf,/turf/simulated/mineral))
 				if(target_turf.excavation_level < 200)
 					if(target_turf.name == storedname)
-						to_chat(player, span_notice("Rock Found"))
+						to_chat(user, span_notice("Ore Found"))
 						update_icon()
-						scan_beam = player.Beam(target_turf, icon = 'code/game/Rogue Star/icons/itemicons/borkmedigun.dmi', icon_state = myicon, time = 6000)
-						box_segments = list()
-						if(player.client)
-							box_segments = draw_box(target_turf, beam_range, player.client)
-							color_box(box_segments, mycolor, 5)
-						process_cmlaser(target_turf, player)
-						break
+						scan_beam = user.Beam(target_turf, icon = 'code/game/Rogue Star/icons/itemicons/MiningLaser.dmi', icon_state = "mlaser-beam-ore", time = 6000)
 
+						process_cmlaser(target_turf, user)
+						break
+	if(!bumpmine)
+		for(var/atom/A as anything in highlighted)
+			if(QDELETED(A))
+				continue
+			A.filters -= filter
+		highlighted.Cut()
+		//to_chat(user, span_notice("Normal Cleanup"))
+		soundloop.stop()
 	return
 
 
-/*
-/obj/item/device/new_cmlaser/linked/proc/process_mining(var/turf/iteration)
-	var/mob/player = loc
-	iteration = get_turf(player)
-	var/turf/center = iteration
-	var/i = beam_range+1
-	var/m = 0
-	while(m < i)
-		var/turf/simulated/mineral/target_turf = center
-		if(target_turf.density && istype(target_turf,/turf/simulated/mineral))
-			if(target_turf.excavation_level < 200)
-				to_chat(player, span_notice("Rock Found"))
-				update_icon()
-				scan_beam = player.Beam(target_turf, icon = 'code/game/Rogue Star/icons/itemicons/borkmedigun.dmi', icon_state = myicon, time = 6000)
-				box_segments = list()
-				if(player.client)
-					box_segments = draw_box(target_turf, beam_range, player.client)
-					color_box(box_segments, mycolor, 5)
-				process_cmlaser(target_turf, player)
-				break
-		else
-			if(target_turf.density)
-				break
-			center = get_step(center, player.dir) //Advance in the given direction
-			to_chat(player, span_notice("No rock found [center] m = [m]"))
-			m++
-*/
 /obj/item/device/new_cmlaser/linked/proc/should_stop(var/turf/simulated/mineral/target, var/mob/living/user, var/active_hand)
 	if((!target ) || !user /*|| (!active_hand && cmlaser_base_unit.is_twohanded())*/ || !isturf(target) || !istype(user) || busy < MEDIGUN_BUSY)
 		return TRUE
@@ -125,9 +111,13 @@
 		QDEL_NULL(scan_beam)
 		movetotile(target, user)
 		sleep(1)
-		if(user.client) // If for some reason they logged out mid-scan the box will be gone anyways.
-			delete_box(box_segments, user.client)
-		process_mining(lastmined)
+		//for(var/obj/effect/mineral/M in target.contents)
+		//	M.filters -= filter
+		//highlighted -= target
+
+		if(storedname != "rock" && !bumpmine)
+			process_mining(lastmined)
+
 		return TRUE
 	/*if((user.get_active_hand() != active_hand || wielded == 0) && cmlaser_base_unit.is_twohanded())
 		to_chat(user, span_warning("Please keep your hands free!"))
@@ -142,7 +132,7 @@
 	if(user.stat)
 		return TRUE
 
-	if(!(target in range(beam_range, user)) || (!(target in view(10, user)) && !(cmlaser_base_unit.smodule.get_rating() >= 5)))
+	if(!(target in range(beam_range, user)) || (!(target in view(beam_range, user))))
 		to_chat(user, span_warning("You are too far away from \the [target] to affect it/them, Or they are not in view. Get closer."))
 		return TRUE
 
@@ -153,11 +143,18 @@
 
 /obj/item/device/new_cmlaser/linked/afterattack(atom/target, mob/user, proximity_flag)
 	// Things that invalidate the scan immediately.
+	bumpmine = proximity_flag
+	if(!(target in range(beam_range, user)) || (!(target in view(beam_range, user))))
+		to_chat(user, span_warning("Range Debug."))
+		return
 	if(isturf(target))
 		var/turf/simulated/mineral/target_turf = target
-		if(target_turf.excavation_level >= 200 || !target_turf.density || !(istype(target_turf,/turf/simulated/mineral)))
+		if(!istype(target_turf,/turf/simulated/mineral))
+			return
+		if(target_turf.excavation_level >= 200 || !target_turf.density)
 			return
 		target = target_turf
+
 	if(busy && !(target == current_target) && isturf(target))
 		to_chat(user, span_warning("\The [src] is already targeting something."))
 		return
@@ -178,31 +175,37 @@
 	if(!check_charge(5))
 		to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
 		return
-	if(get_dist(target, user) > beam_range)
-		to_chat(user, span_warning("You are too far away from \the [target] to affect it. Get closer."))
-		return
-
 	if(target == current_target && busy)
 		busy = MEDIGUN_CANCELLED
 		return
 	if(target == user)
-		return
-	if(!(target in range(beam_range, user)) || (!(target in view(10, user)) && !cmlaser_base_unit.smodule))
-		to_chat(user, span_warning("You are too far away from \the [target] to affect it/them, Or it/they are not in view. Get closer."))
 		return
 	current_target = target
 	busy = MEDIGUN_BUSY
 	update_icon()
 	lastmined = target
 	storedname = target.name
-	scan_beam = user.Beam(target, icon = 'code/game/Rogue Star/icons/itemicons/borkmedigun.dmi', icon_state = myicon, time = 6000)
-	box_segments = list()
-	playsound(src, 'sound/weapons/wave.ogg', 50)
-	var/H = target
-	if(user.client)
-		box_segments = draw_box(target, beam_range, user.client)
-		color_box(box_segments, mycolor, 5)
-	process_cmlaser(H, user)
+	if(target.name == "rock" || bumpmine)
+		if(!bumpmine)scan_beam = user.Beam(target, icon = 'code/game/Rogue Star/icons/itemicons/MiningLaser.dmi', icon_state = "mlaser-beam", time = 6000)
+		playsound(src, 'sound/rogue-star/MiningLaser/laserstart.ogg', 15, 1)
+		warmup = 7.5
+	else
+		soundloop.start()
+		scan_beam = user.Beam(target, icon = 'code/game/Rogue Star/icons/itemicons/MiningLaser.dmi', icon_state = "mlaser-beam-ore", time = 6000)
+
+		for(var/obj/effect/mineral/M in target.contents)
+			highlighted += M
+		for(var/atom/X as anything in orange(2, target))
+			if(!X.simulated)
+				continue
+			if(isturf(X))
+				if(X.name == storedname)
+					for(var/obj/effect/mineral/M in X.contents)
+						highlighted += M
+		for(var/atom/A as anything in highlighted)
+			A.filters += filter
+		warmup = 25
+	process_cmlaser(target, user)
 
 	action_cancelled = FALSE
 	busy = MEDIGUN_IDLE
@@ -213,25 +216,33 @@
 	sleep(1)
 	QDEL_NULL(scan_beam)
 	sleep(1)
-	if(user.client) // If for some reason they logged out mid-scan the box will be gone anyways.
-		delete_box(box_segments, user.client)
 
-/obj/item/device/new_cmlaser/linked/proc/process_cmlaser(turf/H, mob/user, filter, isactive = FALSE)
-	if(should_stop(H, user, user.get_active_hand()))
+/obj/item/device/new_cmlaser/linked/proc/process_cmlaser(turf/T, mob/user, isactive = FALSE)
+	if(should_stop(T, user, user.get_active_hand()))
 		return
 
-	if(do_after(user, warmup, ignore_movement = TRUE, needhand = cmlaser_base_unit.is_twohanded()))
+	if(do_after(user, warmup, ignore_movement = FALSE))
 		isactive = FALSE // The default is 'we didn't heal this cycle'
 		if(!checked_use(5))
 			to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
 			return
-		if(isturf(H))
-			var/turf/simulated/mineral/target_turf = H
+		if(isturf(T))
+			var/turf/simulated/mineral/target_turf = T
 			if(istype(target_turf,/turf/simulated/mineral))
 				target_turf.cmlaser_act(excavation_amount)
 
-		process_cmlaser(H, user, filter, isactive)
+		process_cmlaser(T, user, isactive)
+	if(!bumpmine)
+		for(var/atom/A as anything in highlighted)
 
+			if(QDELETED(A))
+				continue
+			to_chat(user, span_notice("list [A]"))
+			A.filters -= filter
+		highlighted.Cut()
+		//to_chat(user, span_notice("Moved"))
+
+		soundloop.stop()
 
 
 /obj/item/device/new_cmlaser/linked/proc/movetotile(turf/T as turf, mob/user as mob)
@@ -243,4 +254,5 @@
 			OB.stored_ore[ore.material]++	// Add the ore to the box
 			qdel(ore)
 		else
-			O.forceMove(get_turf(user))
+			var/center = get_turf(user)
+			O.forceMove(get_step(center,user.dir))

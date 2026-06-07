@@ -5,17 +5,16 @@
 /obj/item/device/new_cmlaser
 	name = "Mining Laser"
 	desc = "The Bork BSM-92 or 'Blue Space Medigun' utilizes advanced bluespace technology to transfer beneficial reagents directly to torn tissue. This way, even larger wounds can be mended efficiently in short periods of time"
-	icon = 'code/game/Rogue Star/icons/itemicons/borkmedigun.dmi'
-	icon_state = "medblaster"
-	var/wielded_item_state = "medblaster-wielded"
-	var/base_icon_state = "medblaster"
+	icon = 'code/game/Rogue Star/icons/itemicons/MiningLaser.dmi'
+	icon_state = "mlaser"
+	var/base_icon_state = "mlaser"
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/items/lefthand_guns_rs.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_guns_rs.dmi',
 		)
 	w_class = ITEMSIZE_HUGE
 	force = 0
-	var/beam_range = 3 // How many tiles away it can scan. Changing this also changes the box size.
+	var/beam_range = 7 // How many tiles away it can mine.
 	var/busy = MEDIGUN_IDLE // Set to true when scanning, to stop multiple scans.
 	var/action_cancelled = FALSE
 	var/wielded = FALSE
@@ -32,7 +31,7 @@
 		wielded = FALSE
 		//name = initial(name) //This either
 	..()
-
+/*
 /obj/item/device/new_cmlaser/update_held_icon()
 	if(wielded_item_state)
 		var/mob/living/M = loc
@@ -45,7 +44,7 @@
 				LAZYSET(item_state_slots, slot_r_hand_str, initial(item_state))
 
 		..()
-
+*/
 // Draws a box showing the limits of movement while scanning something.
 // Only the client supplied will see the box.
 /obj/item/device/new_cmlaser/proc/draw_box(atom/A, box_size, client/C)

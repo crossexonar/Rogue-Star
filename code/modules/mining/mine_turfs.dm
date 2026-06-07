@@ -338,7 +338,11 @@ var/list/mining_overlay_cache = list()
 		var/obj/item/weapon/pickaxe/P = H.get_inactive_hand()
 		if(istype(P))
 			src.attackby(P, H)
-
+		//RS Add start, Mining laser bumpmine?
+		var/obj/item/device/new_cmlaser/ml = H.get_active_hand()
+		if(istype(ml))
+			ml.afterattack(src, H, 1)
+		//RS Add End, Mining laser bumpmine?
 	else if(istype(AM,/mob/living/silicon/robot))
 		var/mob/living/silicon/robot/R = AM
 		if(istype(R.module_active,/obj/item/weapon/pickaxe))
@@ -502,7 +506,6 @@ var/list/mining_overlay_cache = list()
 			S.deductcharge()
 			S.status = 0
 			S.update_held_icon()
-
 		if (istype(W, /obj/item/weapon/pickaxe))
 			if(!istype(user.loc, /turf))
 				return
