@@ -377,7 +377,6 @@
 	reload_time = 10
 	can_flashlight = TRUE
 	gun_light = FALSE
-	var/doubleaction = FALSE
 
 /obj/item/weapon/gun/projectile/revolver/rsh/CtrlClick(mob/user)
 	..()
@@ -406,22 +405,11 @@
 /obj/item/weapon/gun/projectile/revolver/rsh/Fire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0)
 	if(opened)
 		return
-	if((!doubleaction) && (!cocked) && (world.time > next_fire_time) && (world.time > recentpump + 10))
+	if((!cocked) && (world.time > next_fire_time) && (world.time > recentpump + 20))
 		recentpump = world.time
 		to_chat(user, "<span class='notice'>cocked = [cocked] pumptime?</span>")
 		pump(user)
 		return
-	if(doubleaction && (world.time > next_fire_time))
-		chambered = null
-		if(loaded.len)
-			var/obj/item/ammo_casing/AC = loaded[1] // Load next casing.
-			loaded -= AC // Remove casing from loaded list.
-			chambered = AC
-			//M.hud_used.update_ammo_hud(M, src) // TGMC Ammo HUD Port
-			cocked = TRUE
-		if(pump_animation) // This affects all bolt action and shotguns.
-			//playsound(src, action_sound, 60, 1)
-			flick("[pump_animation]", src) // This plays any pumping
 	if(cocked && (world.time > recentpump + 5))
 		..()
 		cocked = FALSE
